@@ -1,5 +1,6 @@
 .vscode/**
 typings/**
+node_modules/**
 out/test/**
 test/**
 src/**
