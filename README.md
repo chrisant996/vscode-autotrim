@@ -8,7 +8,7 @@ The intent is to strike a balance between trimming lines vs churning diffs with 
 
 There are 3 key reasons to avoid unnecessary whitespace changes:
 - They can create unnecessary merge conflicts.  That represents work for someone, wastes time, and can feel annoying.
-- Merge conflicts due to unnecessary whitespace changes can make it easy to overlook critical changes hidden within the sea of whitespace changes.  It's easy to assume the entire conflict is just whitespace changes and make an arbitrary decision how to resolve it, especially when feeling annoyed about it.  I've personally observed many instances where critical regressions were introduced by the combination of overly aggressive trimming of trailing whitespace and inattention conflict resolution.
+- Merge conflicts due to unnecessary whitespace changes can make it easy to overlook critical changes hidden within the sea of whitespace changes.  It's easy to assume the entire conflict is just whitespace changes and make an arbitrary decision how to resolve it, especially when feeling annoyed about it.  I've personally observed many instances where critical regressions were introduced by the combination of overly aggressive trimming of trailing whitespace and inattentive conflict resolution.
 - Making unnecessary whitespace changes can create distracting diffs, interfere with per-line change annotations, and so on.
 
 ## How To Use It
@@ -33,6 +33,4 @@ The `autotrim.debugMode` setting can be any of the following.
 
 ## Credits
 
-This extension is forked from [nathanridley.autotrim](https://github.com/axefrog/vscode-autotrim) v1.0.6, which trimmed trailing whitespace from any line the cursor visited.
-
-The extension hadn't been updated in about 4 years, and I wanted to only trim trailing whitespace from lines _changed_ by the user.  Starting from the `vscode-autotrim` extension, I ended up mostly rewriting it, but the underlying data structures are still essentially the same.
+This extension is forked from [nathanridley.autotrim](https://github.com/axefrog/vscode-autotrim) v1.0.6, which trimmed trailing whitespace from any line the cursor visited.  The extension hadn't been updated in about 4 years, and I wanted to only trim trailing whitespace from lines _changed_ by the user.  Starting from the `vscode-autotrim` extension, I ended up mostly rewriting it, but the underlying data structures are still essentially the same.
