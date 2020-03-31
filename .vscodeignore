@@ -4,6 +4,7 @@ node_modules/**
 out/test/**
 test/**
 src/**
+**/*.vsix
 **/*.map
 .gitignore
 tsconfig.json
