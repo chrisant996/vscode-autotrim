@@ -9,3 +9,5 @@ src/**
 **/*.map
 .gitignore
 tsconfig.json
+TODO.md
+
