@@ -15,9 +15,42 @@
         "Other"
     ],
     "activationEvents": [
-        "*"
+        "*",
+        "autotrim.pauseFile"
     ],
     "main": "./out/src/extension",
+    "contributes": {
+        "commands":[
+            {
+                "command": "autotrim.pauseFile",
+                "icon": "$(debug-pause)",
+                "title": "Pause autotrim for current file",
+                "when": "editorTextFocus"
+            }
+        ],
+        "configuration": [
+            {
+                "title": "AutoTrim",
+                "properties": {
+                    "autotrim.debugMode": {
+                        "type": "number",
+                        "default": 0,
+                        "enum": [
+                            0, 
+                            1, 
+                            2
+                        ],
+                        "enumDescriptions": [
+                            "debug mode is off", 
+                            "logging is enabled", 
+                            "do not alter files, and logging is enabled"
+                        ],
+                        "description": "enable debug mode"
+                    }
+                }
+            }
+        ]
+    },
     "scripts": {
         "vscode:prepublish": "tsc -p ./",
         "compile": "tsc -watch -p ./",
