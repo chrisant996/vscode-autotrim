@@ -72,6 +72,7 @@ class LineTrimmer {
             this._paused.delete(doc);
         } else {
             this._paused.add(doc);
+            this._lines.delete(doc);
         }
         this._status.update(editor, this._paused);
     }
