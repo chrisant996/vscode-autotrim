@@ -1,6 +1,6 @@
-# AutoTrim: VS Code Extension
+# AutoTrim
 
-Trailing whitespace often exists after editing lines of code, deleting trailing words and so forth.  This extension tracks lines that have changed during the editing session and removes trailing tabs and spaces from them they no longer have an active cursor.
+Trailing whitespace often exists after editing lines of code, deleting trailing words and so forth.  This VSCode extension tracks lines that have changed during the editing session and removes trailing tabs and spaces from them they no longer have an active cursor.
 
 ## Why Does It Matter?
 
@@ -17,10 +17,22 @@ Just install the extension and it will automatically track edited lines and trim
 
 A clickable status bar item toggles the trimming mode between enabled or paused on a per-file basis.  It can be handy for those times when for whatever reason you need to preserve (or add!) trailing whitespace on edited lines.
 
+![Trim enabled in status bar](images/Trim.png) ![Trim paused in status bar](images/Paused.png)
+
 There's a `autotrim.pauseFile` command in case you want to add a keybinding for toggling the trimming mode.
+
+## Configuration
+
+The `autotrim.debugMode` setting can be any of the following.
+
+|Value |Description |
+|---|---|
+|0 | (_default_) Debugging mode is disabled. |
+|1 | Debug logging is enabled. |
+|2 | Debug logging is enabled, and the extension _does not alter file content_. |
 
 ## Credits
 
-A special "thank you!" to Nathan Ridley.  This extension is forked from [nathanridley.autotrim](https://github.com/axefrog/vscode-autotrim) v1.0.6, which trimmed trailing whitespace from any line the cursor visited.
+This extension is forked from [nathanridley.autotrim](https://github.com/axefrog/vscode-autotrim) v1.0.6, which trimmed trailing whitespace from any line the cursor visited.
 
 The extension hadn't been updated in about 4 years, and I wanted to only trim trailing whitespace from lines _changed_ by the user.  Starting from the `vscode-autotrim` extension, I ended up mostly rewriting it, but the underlying data structures are still essentially the same.
