@@ -96,16 +96,19 @@ class LineTrimmer {
     }
 
     private async onChangeDocument(e: vscode.TextDocumentChangeEvent) {
-        if (this._paused.has(e.document.uri.fsPath)) {
+        // If the document is paused => bail.
+        if (this._paused.has(e.document)) {
             return;
         }
 
+        // Get collection of watched lines, or create a new collection.
         let watchedLines = this._lines.get(e.document);
         if (!watchedLines) {
             watchedLines = new Set<number>();
             this._lines.set(e.document, watchedLines);
         }
 
+        // Iterate over the content changes.
         for (let chg of e.contentChanges) {
             const startLineDocument = chg.range.start.line;
             const endLineDocument = (chg.range.end.character === 0 && chg.range.end.line > chg.range.start.line) ? chg.range.end.line - 1 : chg.range.end.line;
@@ -174,34 +177,38 @@ class LineTrimmer {
     }
 
     private processLines(doc: vscode.TextDocument, selections: readonly vscode.Selection[], callback: TrimCallback) {
-        if (!this._paused.has(doc.uri.fsPath)) {
-            const watchedLines = this._lines.get(doc);
-            const activeLines = new Set<number>(selections.map(sel => sel.active.line));
-
-            if (this._debugMode > 0) { console.warn("processLines:"); }
-
-            watchedLines.forEach(lineNum => {
-                if (lineNum >= doc.lineCount) {
-                    watchedLines.delete(lineNum);
-                } else if (!activeLines.has(lineNum) && doc.lineCount > lineNum) {
-                    const line = doc.lineAt(lineNum);
-                    if (!line) {
-                        return;
-                    }
-                    if (doc.languageId === 'markdown' && line.text.match(/[^ ]  $/)) {
-                        return;
-                    }
-                    const match = line.text.match(/(^|\S)(\s+)$/);
-                    if (match && match[2].length > 0) {
-                        if (this._debugMode > 0) { console.log(`  trim!  line ${lineNum}, last ${match[2].length} characters of "${line.text}"`); }
-                        if (this._debugMode < 2) { callback(new vscode.Range(lineNum, line.text.length - match[2].length, lineNum, line.text.length)); }
-                    } else {
-                        if (this._debugMode > 0) { console.log(`  no trailing white on line ${lineNum}`); }
-                    }
-                    watchedLines.delete(lineNum);
-                }
-            });
+        // If the document is paused => bail.
+        if (this._paused.has(doc)) {
+            return;
         }
+
+        const watchedLines = this._lines.get(doc);
+        const activeLines = new Set<number>(selections.map(sel => sel.active.line));
+
+        if (this._debugMode > 0) { console.warn("processLines:"); }
+
+        // Process the watched lines that don't have an active cursor on them.
+        watchedLines.forEach(lineNum => {
+            if (lineNum >= doc.lineCount) {
+                watchedLines.delete(lineNum);
+            } else if (!activeLines.has(lineNum) && doc.lineCount > lineNum) {
+                const line = doc.lineAt(lineNum);
+                if (!line) {
+                    return;
+                }
+                if (doc.languageId === 'markdown' && line.text.match(/[^ ]  $/)) {
+                    return;
+                }
+                const match = line.text.match(/(^|\S)(\s+)$/);
+                if (match && match[2].length > 0) {
+                    if (this._debugMode > 0) { console.log(`  trim!  line ${lineNum}, last ${match[2].length} characters of "${line.text}"`); }
+                    if (this._debugMode < 2) { callback(new vscode.Range(lineNum, line.text.length - match[2].length, lineNum, line.text.length)); }
+                } else {
+                    if (this._debugMode > 0) { console.log(`  no trailing white on line ${lineNum}`); }
+                }
+                watchedLines.delete(lineNum);
+            }
+        });
     }
 
     dispose() {
