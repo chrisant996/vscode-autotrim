@@ -23,6 +23,8 @@ There's a `autotrim.pauseFile` command in case you want to add a keybinding for 
 
 ## Configuration
 
+The `autotrim.statusBar` setting controls whether the status bar item is present.
+
 The `autotrim.debugMode` setting can be any of the following.
 
 |Value |Description |
@@ -30,6 +32,10 @@ The `autotrim.debugMode` setting can be any of the following.
 |0 | (_default_) Debugging mode is disabled. |
 |1 | Debug logging is enabled. |
 |2 | Debug logging is enabled, and the extension _does not alter file content_. |
+
+## Known Issues
+
+- Due to how VSCode sends document change notifications, when inserting or deleting lines the line immediately adjacent to the edit may also get trimmed.  It should be possible to detect and compensate in those cases, but the special cases have to be very accurately and precisely defined (and Undo might be extra challenging to make work exactly right).
 
 ## Credits
 

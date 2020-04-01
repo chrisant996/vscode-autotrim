@@ -42,7 +42,7 @@ class LineTrimmer {
     private _lines = new WeakMap<any, Set<number>>();
     private _paused = new Set<any>();
     private _debugMode: number = 0;
-    private _status = new StatusBar();
+    private _status: StatusBar | undefined = undefined;
 
     constructor() {
         this._debugMode = vscode.workspace.getConfiguration('autotrim').debugMode;
@@ -54,7 +54,10 @@ class LineTrimmer {
             vscode.workspace.onDidChangeConfiguration(this.onChangeConfiguration, this),
             vscode.commands.registerCommand("autotrim.pauseFile", this.pauseFile, this)
         );
-        this._status.update(vscode.window.activeTextEditor, this._paused);
+        if (vscode.workspace.getConfiguration('autotrim').statusBar === true) {
+            this._status = new StatusBar();
+            this._status.update(vscode.window.activeTextEditor, this._paused);
+        }
     }
 
     private async pauseFile() {
@@ -74,11 +77,15 @@ class LineTrimmer {
             this._paused.add(doc);
             this._lines.delete(doc);
         }
-        this._status.update(editor, this._paused);
+        if (this._status) {
+            this._status.update(editor, this._paused);
+        }
     }
 
     private async onChangeActiveEditor(e: vscode.TextEditor) {
-        this._status.update(e, this._paused);
+        if (this._status) {
+            this._status.update(e, this._paused);
+        }
     }
 
     private async onChangeSelection(e: vscode.TextEditorSelectionChangeEvent) {
@@ -186,6 +193,19 @@ class LineTrimmer {
         if (cfg.affectsConfiguration('autotrim.debugMode')) {
             this._debugMode = vscode.workspace.getConfiguration('autotrim').debugMode;
         }
+        if (cfg.affectsConfiguration('autotrim.statusBar')) {
+            if (vscode.workspace.getConfiguration('autotrim').statusBar === true) {
+                if (!this._status) {
+                    this._status = new StatusBar()
+                    this._status.update(vscode.window.activeTextEditor, this._paused);
+                }
+            } else {
+                if (this._status) {
+                    this._status.dispose();
+                    this._status = undefined;
+                }
+            }
+        }
     }
 
     private processLines(doc: vscode.TextDocument, selections: readonly vscode.Selection[], callback: TrimCallback) {
@@ -225,5 +245,8 @@ class LineTrimmer {
 
     dispose() {
         this._disposables.forEach(d => d.dispose());
+        if (this._status) {
+            this._status.dispose();
+        }
     }
 }

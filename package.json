@@ -47,6 +47,11 @@
                             "do not alter files, and logging is enabled"
                         ],
                         "description": "enable debug mode"
+                    },
+                    "autotrim.statusBar": {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "show status bar item that allows enabling or pausing automatic trimming"
                     }
                 }
             }
