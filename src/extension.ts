@@ -112,8 +112,8 @@ class LineTrimmer {
         // Iterate over the content changes.
         for (let chg of e.contentChanges) {
             const startLineDocument = chg.range.start.line;
-            const endLineDocument = (chg.range.end.character === 0 && chg.range.end.line > chg.range.start.line) ? chg.range.end.line - 1 : chg.range.end.line;
-            const oldLength = endLineDocument + 1 - startLineDocument;
+            const endLineDocument = chg.range.end.line;
+            const oldLength = endLineDocument - startLineDocument;
             const newLength = chg.text.split('\n').length;
 
             // Remove deleted lines.
@@ -121,24 +121,35 @@ class LineTrimmer {
                 watchedLines.delete(deleteLine);
             }
 
-            // Apply delta to greater lines per deletion.
-            if (oldLength !== newLength) {
-                const subtract: number[] = [];
-                watchedLines.forEach(line => {
-                    if (line > endLineDocument) {
-                        subtract.push(line);
-                    }
-                });
-                if (oldLength > newLength) {
-                    subtract.sort((a, b) => a - b);
-                } else {
-                    subtract.sort((a, b) => b - a);
+            // Move lines per deletions.
+            let applyDelta: number[] = [];
+            watchedLines.forEach(line =>
+            {
+                if (line > endLineDocument) {
+                    applyDelta.push(line);
                 }
-                subtract.forEach(line => {
-                    watchedLines.delete(line);
-                    watchedLines.add(line - oldLength);
-                });
-            }
+            });
+            applyDelta.sort((a, b) => a - b);
+            applyDelta.forEach(line =>
+            {
+                watchedLines.delete(line);
+                watchedLines.add(line - oldLength);
+            });
+
+            // Move lines per insertions.
+            applyDelta = [];
+            watchedLines.forEach(line =>
+            {
+                if (line >= startLineDocument) {
+                    applyDelta.push(line);
+                }
+            });
+            applyDelta.sort((a, b) => b - a);
+            applyDelta.forEach(line =>
+            {
+                watchedLines.delete(line);
+                watchedLines.add(line + newLength - 1);
+            });
 
             // Add new lines.
             for (let insertLine = startLineDocument; insertLine <= (startLineDocument + newLength - 1); insertLine++) {
