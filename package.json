@@ -2,7 +2,7 @@
     "name": "autotrim",
     "displayName": "AutoTrim",
     "description": "Automatically trims trailing whitespace from edited lines",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "publisher": "chrisant996",
     "license": "MIT license (see LICENSE file)",
     "repository": {
