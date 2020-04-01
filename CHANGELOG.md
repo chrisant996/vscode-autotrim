@@ -5,7 +5,7 @@ All notable changes to the "vscode-autotrim" extension will be documented in thi
 - Format based on [Keep a Changelog](https://keepachangelog.com/).
 - Follows [Semantic Versioning](https://semver.org/).
 
-## 1.1.1
+## [1.1.1](https://github.com/chrisant996/vscode-autotrim/tree/25d663569dfb7a3a720b64a7b8cb781bb202e29c)
 
 - Fixed mistaken arithmetic that could potentially get slightly off about which lines it thought had been edited.
 - Added `autotrim.statusBar` setting to control whether the status bar item is created.  Or you can hide it via the status bar's right click menu, but then it still uses runtime resources.
