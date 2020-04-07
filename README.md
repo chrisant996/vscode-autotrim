@@ -21,17 +21,24 @@ A clickable status bar item toggles the trimming mode between enabled or paused 
 
 There's a `autotrim.pauseFile` command in case you want to add a keybinding for toggling the trimming mode.
 
+MarkDown files get a little bit of special treatment:  lines ending in exactly two spaces are alone, since two spaces is the same as `<br>` in MarkDown.
+
 ## Configuration
 
-The `autotrim.statusBar` setting controls whether the status bar item is present.
+`autotrim.statusBar` shows a status bar item that can be clicked to toggle pausing the trimming mode on a per-file basis.
 
-The `autotrim.debugMode` setting can be any of the following.
+`autotrim.highlightTrailing` shows highlighting for trailing whitespace.  
+`autotrim.highlightTrailingEvenWhileEditing` highlights trailing whitespace even for lines being editing (normally it's hidden while a line is being edited, since it'll get trimmed).  
 
-|Value |Description |
-|---|---|
-|0 | (_default_) Debugging mode is disabled. |
-|1 | Debug logging is enabled. |
-|2 | Debug logging is enabled, and the extension _does not alter file content_. |
+`autotrim.backgroundColor` sets the background color for the highlighting (CSS style string).  
+`autotrim.borderColor` sets the border color for the highlighting (CSS style string).  
+`autotrim.borderWidth` sets the border width for the highlighting (CSS style string).  
+`autotrim.borderRadius` sets the border radius for the highlighting (CSS style string).  
+
+`autotrim.ignoreScheme` is string containing a list of schemes for which trimming and highlighting are disabled, separated by spaces (by default the 'output' scheme is disabled to avoid interfering with the Output pane).  
+`autotrim.ignoreSyntax` is string containing a list of language Ids for which trimming and highlighting are disabled, separated by spaces.  
+
+`autotrim.loglevel` setting is for debugging purposes; you can ignore it.
 
 ## Known Issues
 
@@ -40,3 +47,5 @@ The `autotrim.debugMode` setting can be any of the following.
 ## Credits
 
 This extension is forked from [nathanridley.autotrim](https://github.com/axefrog/vscode-autotrim) v1.0.6, which trimmed trailing whitespace from any line the cursor visited.  The extension hadn't been updated in about 4 years, and I wanted to only trim trailing whitespace from lines _changed_ by the user.  Starting from the `vscode-autotrim` extension, I ended up mostly rewriting it, but the underlying data structures are still essentially the same.
+
+This extension also includes some concepts and code lifted from [shardulm94.trailing-spaces](https://github.com/shardulm94/vscode-trailingspaces).

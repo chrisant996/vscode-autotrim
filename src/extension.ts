@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+import { ILogger, Logger } from './logger';
+import { Settings } from './settings';
 
 export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(new LineTrimmer());
@@ -11,6 +13,7 @@ type TrimCallback = (range: vscode.Range) => void;
 
 class StatusBar {
     private _item: vscode.StatusBarItem;
+    private _settings = Settings.getInstance();
 
     constructor() {
         this._item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right);
@@ -28,24 +31,36 @@ class StatusBar {
         }
         
         const trim = !paused.has(editor.document);
+        const ignore = this._settings.ignoreDocument(editor.document);
 
-        this._item.text = `$(${trim ? "filter" : "circle-slash"}) Trim`;
-        this._item.tooltip = trim ? "Automatically trim trailing whitespace from edited lines" : "Paused:  automatic trim is paused for this file";
-        this._item.color = trim ? "#ffffff" : "#ffffff7f";
+        if (ignore) {
+            this._item.text = "$(circle-slash) Trim";
+            this._item.tooltip = "Ignored:  Automatic trimming of whitespace is ignored for this file syntax or scheme";
+            this._item.color = "#ffffff7f";
+        } else if (trim) {
+            this._item.text = "$(filter) Trim";
+            this._item.tooltip = "Automatically trim trailing whitespace from edited lines";
+
+        } else {
+            this._item.text = "$(debug-pause) Trim";
+            this._item.tooltip = "Paused:  Automatic trimming of whitespace is paused for this file";
+
+        }
+        this._item.color = trim && !ignore ? "#ffffff" : "#ffffff7f";
 
         this._item.show();
     }
 }
 
 class LineTrimmer {
+    private _logger = Logger.getInstance();
+    private _settings = Settings.getInstance();
     private _disposables: vscode.Disposable[] = [];
     private _lines = new WeakMap<any, Set<number>>();
     private _paused = new Set<any>();
-    private _debugMode: number = 0;
     private _status: StatusBar | undefined = undefined;
 
     constructor() {
-        this._debugMode = vscode.workspace.getConfiguration('autotrim').debugMode;
         this._disposables.push(
             vscode.window.onDidChangeActiveTextEditor(this.onChangeActiveEditor, this),
             vscode.window.onDidChangeTextEditorSelection(this.onChangeSelection, this),
@@ -54,10 +69,10 @@ class LineTrimmer {
             vscode.workspace.onDidChangeConfiguration(this.onChangeConfiguration, this),
             vscode.commands.registerCommand("autotrim.pauseFile", this.pauseFile, this)
         );
-        if (vscode.workspace.getConfiguration('autotrim').statusBar === true) {
+        if (this._settings.statusBar === true) {
             this._status = new StatusBar();
-            this._status.update(vscode.window.activeTextEditor, this._paused);
         }
+        this.onChangeActiveEditor(vscode.window.activeTextEditor);
     }
 
     private async pauseFile() {
@@ -80,18 +95,20 @@ class LineTrimmer {
         if (this._status) {
             this._status.update(editor, this._paused);
         }
+        this.highlightTrailingSpaces(editor);
     }
 
     private async onChangeActiveEditor(e: vscode.TextEditor) {
         if (this._status) {
             this._status.update(e, this._paused);
         }
+        this.highlightTrailingSpaces(e);
     }
 
     private async onChangeSelection(e: vscode.TextEditorSelectionChangeEvent) {
         // If the document is paused or has no ranges to be processed => bail.
         const doc = e.textEditor.document;
-        if (this._paused.has(doc.uri.fsPath) || !this._lines.get(doc)) {
+        if (this._paused.has(doc.uri.fsPath) || this._settings.ignoreDocument(doc) || !this._lines.get(doc)) {
             return;
         }
 
@@ -100,12 +117,12 @@ class LineTrimmer {
             this.processLines(doc, e.selections, (trimRange) => {
                 ed.delete(trimRange);
             })
-        });
+        }, { undoStopAfter: false, undoStopBefore: false });
     }
 
     private async onChangeDocument(e: vscode.TextDocumentChangeEvent) {
         // If the document is paused => bail.
-        if (this._paused.has(e.document)) {
+        if (this._paused.has(e.document) || this._settings.ignoreDocument(e.document)) {
             return;
         }
 
@@ -164,15 +181,17 @@ class LineTrimmer {
             }
         }
 
-        if (this._debugMode > 0) {
-            console.warn("watching lines:");
-            watchedLines.forEach(n => console.log(`  watching ${n}`));
+        this._logger.info(`watching ${watchedLines.size} line`);
+        watchedLines.forEach(n => this._logger.log(`  watching ${n}`));
+
+        if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document === e.document) {
+            this.highlightTrailingSpaces(vscode.window.activeTextEditor);
         }
     }
 
     private async onWillSaveDocument(e: vscode.TextDocumentWillSaveEvent) {
-        // If the document has no ranges to be processed, there's nothing to do.
-        if (!this._lines.get(e.document)) {
+        // If the document has no ranges to be processed or is ignored => do nothing.
+        if (!this._lines.get(e.document) || this._settings.ignoreDocument(e.document)) {
             return;
         }
 
@@ -190,20 +209,30 @@ class LineTrimmer {
     }
 
     private async onChangeConfiguration(cfg: vscode.ConfigurationChangeEvent) {
-        if (cfg.affectsConfiguration('autotrim.debugMode')) {
-            this._debugMode = vscode.workspace.getConfiguration('autotrim').debugMode;
-        }
-        if (cfg.affectsConfiguration('autotrim.statusBar')) {
-            if (vscode.workspace.getConfiguration('autotrim').statusBar === true) {
-                if (!this._status) {
-                    this._status = new StatusBar()
-                    this._status.update(vscode.window.activeTextEditor, this._paused);
+        if (cfg.affectsConfiguration('autotrim')) {
+            this._settings.refresh();
+
+            if (cfg.affectsConfiguration('autotrim.statusBar')) {
+                if (this._settings.statusBar === true) {
+                    if (!this._status) {
+                        this._status = new StatusBar()
+                    }
+                } else {
+                    if (this._status) {
+                        this._status.dispose();
+                        this._status = undefined;
+                    }
                 }
-            } else {
-                if (this._status) {
-                    this._status.dispose();
-                    this._status = undefined;
-                }
+            }
+
+            // Refresh highlights in all editors.
+            for (let editor of vscode.window.visibleTextEditors) {
+                setTimeout(this.highlightTrailingSpaces, 50, editor);
+            }
+
+            // Refresh status bar (the 'ignore' status might have changed).
+            if (this._status) {
+                this._status.update(vscode.window.activeTextEditor, this._paused);
             }
         }
     }
@@ -217,7 +246,7 @@ class LineTrimmer {
         const watchedLines = this._lines.get(doc);
         const activeLines = new Set<number>(selections.map(sel => sel.active.line));
 
-        if (this._debugMode > 0) { console.warn("processLines:"); }
+        this._logger.info(`processLines for ${doc.uri.fsPath}`);
 
         // Process the watched lines that don't have an active cursor on them.
         watchedLines.forEach(lineNum => {
@@ -233,14 +262,72 @@ class LineTrimmer {
                 }
                 const match = line.text.match(/(^|\S)(\s+)$/);
                 if (match && match[2].length > 0) {
-                    if (this._debugMode > 0) { console.log(`  trim!  line ${lineNum}, last ${match[2].length} characters of "${line.text}"`); }
-                    if (this._debugMode < 2) { callback(new vscode.Range(lineNum, line.text.length - match[2].length, lineNum, line.text.length)); }
+                    this._logger.log(`  trim!  line ${lineNum}, last ${match[2].length} characters of "${line.text}"`);
+                    callback(new vscode.Range(lineNum, line.text.length - match[2].length, lineNum, line.text.length));
                 } else {
-                    if (this._debugMode > 0) { console.log(`  no trailing white on line ${lineNum}`); }
+                    this._logger.log(`  no trailing white on line ${lineNum}`);
                 }
                 watchedLines.delete(lineNum);
             }
         });
+    }
+
+    private highlightTrailingSpaces(editor: vscode.TextEditor): void {
+        if (editor && this._settings.highlightTrailing) {
+            if (this._paused.has(editor.document)) {
+                editor.setDecorations(this._settings.textEditorDecorationType, []);
+            } else {
+                editor.setDecorations(this._settings.textEditorDecorationType, this.getRangesToHighlight(editor.document, editor.selections));
+            }
+        }
+    }
+
+    private getRangesToHighlight(document: vscode.TextDocument, selections: vscode.Selection[]): vscode.Range[] {
+        let ignoreLines: Set<number> | undefined = undefined;
+        if (!this._settings.highlightEvenWhileEditing) {
+            const docLines: Set<number> = this._lines.get(document);
+            if (docLines) {
+                ignoreLines = new Set<number>();
+                for (let sel of selections) {
+                    if (docLines.has(sel.active.line)) {
+                        ignoreLines.add(sel.active.line);
+                    }
+                }
+            }
+        }
+        return this.findTrailingSpaces(document, ignoreLines);
+    }
+
+    private findTrailingSpaces(document: vscode.TextDocument, ignoreLines: Set<number> | undefined): vscode.Range[] {
+        if (this._settings.ignoreDocument(document)) {
+            this._logger.log(`File ignored -- langauge ${document.languageId}, scheme ${document.uri.scheme}, fileName ${document.fileName}`);
+            return [];
+        } else {
+            let offendingRanges: vscode.Range[] = [];
+            const regexp: string = "([ \t]+)$";
+            const noEmptyLinesRegexp: string = "\\S" + regexp;
+            const offendingRangesRegexp: RegExp = new RegExp(this._settings.includeEmptyLines ? regexp : noEmptyLinesRegexp, "gm");
+            const documentText: string = document.getText();
+            const markdown = document.languageId === "markdown";
+
+            let match: RegExpExecArray | null;
+            // Loop through all the trailing spaces in the document.
+            while ((match = offendingRangesRegexp.exec(documentText)) !== null) {
+                let matchStart: number = (match.index + match[0].length - match[1].length),
+                    matchEnd: number = match.index + match[0].length;
+                let matchRange: vscode.Range = new vscode.Range(document.positionAt(matchStart), document.positionAt(matchEnd));
+                // Ignore ranges which are empty (only containing a single line
+                // ending).  Markdown treats "  " specially, so preserve those.
+                if (!matchRange.isEmpty) {
+                    if (!markdown || document.getText(matchRange) !== "  ") {
+                        if (!ignoreLines || !ignoreLines.has(matchRange.start.line)) {
+                            offendingRanges.push(matchRange);
+                        }
+                    }
+                }
+            }
+            return offendingRanges;
+        }
     }
 
     dispose() {

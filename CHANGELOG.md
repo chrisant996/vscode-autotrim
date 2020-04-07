@@ -5,6 +5,15 @@ All notable changes to the "vscode-autotrim" extension will be documented in thi
 - Format based on [Keep a Changelog](https://keepachangelog.com/).
 - Follows [Semantic Versioning](https://semver.org/).
 
+## 1.2.0
+
+- Added `autotrim.highlightTrailing` (off by default) to highlight trailing whitespace.
+- Added `autotrim.highlightTrailingEvenWhileEditing` (off by default) to highlight trailing whitespace even on a line that's actively being edited (since the trailing whitespace will get trimmed, and it's distracting to see highlights flicker while typing naturally).
+- Added various settings to control the appearance of highlighted trailing whitespace.
+- Added `autotrim.ignoreSyntax` that's a space-delimited list of language Ids for which to disable auto trimming and highlighting (see <https://code.visualstudio.com/docs/languages/identifiers> for some of the available language Ids).
+- Added `autotrim.ignoreScheme` that's a space-delimited list of Uri schemes for which to disable auto trimming and highlighting (files are 'file', and by default 'output' is ignored).
+- Changed `autotrim.debugMode` to `autotrim.logLevel`, and changed the enum.
+
 ## [1.1.1](https://github.com/chrisant996/vscode-autotrim/tree/25d663569dfb7a3a720b64a7b8cb781bb202e29c)
 
 - Fixed mistaken arithmetic that could potentially get slightly off about which lines it thought had been edited.

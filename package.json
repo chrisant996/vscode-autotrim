@@ -2,7 +2,7 @@
     "name": "autotrim",
     "displayName": "AutoTrim",
     "description": "Automatically trims trailing whitespace from edited lines",
-    "version": "1.1.1",
+    "version": "1.2.0",
     "publisher": "chrisant996",
     "license": "MIT license (see LICENSE file)",
     "repository": {
@@ -36,25 +36,69 @@
             {
                 "title": "AutoTrim",
                 "properties": {
-                    "autotrim.debugMode": {
-                        "type": "number",
-                        "default": 0,
+                    "autotrim.loglevel": {
+                        "type": "string",
                         "enum": [
-                            0, 
-                            1, 
-                            2
+                            "none",
+                            "log",
+                            "info",
+                            "warn",
+                            "error"
                         ],
                         "enumDescriptions": [
-                            "debug mode is off", 
-                            "logging is enabled", 
-                            "do not alter files, and logging is enabled"
+                            "Show no logging",
+                            "Show all logging",
+                            "Show info, warn, and error logging",
+                            "Show warn and error logging",
+                            "Show only error logging"
                         ],
-                        "description": "enable debug mode"
+                        "default": "error",
+                        "description": "set debug console logging level"
+                    },
+                    "autotrim.ignoreSyntax": {
+                        "type": "string",
+                        "default": "",
+                        "description": "list of syntax modes (language Ids) to ignore, separated by spaces (trimming and highlighting are disabled in these files)"
+                    },
+                    "autotrim.ignoreScheme": {
+                        "type": "string",
+                        "default": "output",
+                        "description": "list of schemes to ignore, separated by spaces (trimming and highlighting are disabled in these files)"
                     },
                     "autotrim.statusBar": {
                         "type": "boolean",
                         "default": true,
                         "description": "show status bar item that allows enabling or pausing automatic trimming"
+                    },
+                    "autotrim.highlightTrailing": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "highlight trailing whitespace"
+                    },
+                    "autotrim.highlightTrailingEvenWhileEditing": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "highlight trailing whitespace even while editing a line"
+                    },
+                    "autotrim.backgroundColor": {
+                        "type": "string",
+                        "default": "rgba(255,0,0,.1)",
+                        "description": "background color for highlighted trailing whitespace (CSS property string)"
+                    },
+                    "autotrim.borderColor": {
+                        "type": "string",
+                        "default": "rgba(255,100,100,.2)",
+                        "description": "border color for highlighted trailing whitespace (CSS property string)"
+                    },
+                    "autotrim.borderRadius": {
+                        "type": "string",
+                        "default": "0px",
+                        "description": "border radius for highlighted trailing whitespace (CSS property string)"
+                    },
+                    "autotrim.borderWidth": {
+                        "type": "string",
+                        "default": "1px",
+                        "description": "border thickness for highlighted trailing whitespace (CSS property string)"
                     }
                 }
             }
