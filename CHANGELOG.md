@@ -5,7 +5,7 @@ All notable changes to the "vscode-autotrim" extension will be documented in thi
 - Format based on [Keep a Changelog](https://keepachangelog.com/).
 - Follows [Semantic Versioning](https://semver.org/).
 
-## [1.2.0](https://github.com/chrisant996/vscode-autotrim/tree/ff144bd7c63107f1ab763b8c6fdf6cca93685c34)
+## 1.2.0
 
 - Added `autotrim.highlightTrailing` (off by default) to highlight trailing whitespace.
 - Added `autotrim.highlightTrailingEvenWhileEditing` (off by default) to highlight trailing whitespace even on a line that's actively being edited (since the trailing whitespace will get trimmed, and it's distracting to see highlights flicker while typing naturally).

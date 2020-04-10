@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { ILogger, Logger } from './logger';
+import { ILogger, Logger, LogLevel } from './logger';
 import { Settings } from './settings';
 
 export function activate(context: vscode.ExtensionContext) {
@@ -52,11 +52,24 @@ class StatusBar {
     }
 }
 
+class SelChange {
+    fsPath: string;
+    activeSels: number[] = [];
+
+    constructor(fsPath:string, selections: ReadonlyArray<vscode.Selection>) {
+        this.fsPath = fsPath;
+        for (let sel of selections) {
+            this.activeSels.push(sel.active.line);
+        }
+    }
+}
+
 class LineTrimmer {
     private _logger = Logger.getInstance();
     private _settings = Settings.getInstance();
     private _disposables: vscode.Disposable[] = [];
     private _lines = new WeakMap<any, Set<number>>();
+    private _lastSelChange: SelChange | undefined = undefined;
     private _paused = new Set<any>();
     private _status: StatusBar | undefined = undefined;
 
@@ -105,6 +118,32 @@ class LineTrimmer {
         this.highlightTrailingSpaces(e);
     }
 
+    private didSelectionChange(e: vscode.TextEditorSelectionChangeEvent) {
+        let changed = this._lastSelChange === undefined;
+
+        if (!changed) {
+            if (this._lastSelChange.fsPath !== e.textEditor.document.uri.fsPath ||
+                this._lastSelChange.activeSels.length !== e.selections.length) {
+                changed = true;
+            }
+        }
+
+        if (!changed) {
+            for (let index = 0; index < e.selections.length; index++) {
+                if (e.selections[index].active.line !== this._lastSelChange.activeSels[index]) {
+                    changed = true;
+                    break;
+                }
+            }
+        }
+
+        if (changed) {
+            this._lastSelChange = new SelChange(e.textEditor.document.uri.fsPath, e.selections);
+        }
+
+        return changed;
+    }
+
     private async onChangeSelection(e: vscode.TextEditorSelectionChangeEvent) {
         // If the document is paused or has no ranges to be processed => bail.
         const doc = e.textEditor.document;
@@ -118,6 +157,12 @@ class LineTrimmer {
                 ed.delete(trimRange);
             })
         }, { undoStopAfter: false, undoStopBefore: false });
+
+        if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document === e.textEditor.document) {
+            if (this._lastSelChange === undefined || this.didSelectionChange(e)) {
+                this.highlightTrailingSpaces(vscode.window.activeTextEditor);
+            }
+        }
     }
 
     private async onChangeDocument(e: vscode.TextDocumentChangeEvent) {
@@ -181,7 +226,7 @@ class LineTrimmer {
             }
         }
 
-        this._logger.info(`watching ${watchedLines.size} line`);
+        this._logger.info(`watching ${watchedLines.size} line(s)`);
         watchedLines.forEach(n => this._logger.log(`  watching ${n}`));
 
         if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document === e.document) {
@@ -273,12 +318,26 @@ class LineTrimmer {
     }
 
     private highlightTrailingSpaces(editor: vscode.TextEditor): void {
+        let ranges: vscode.Range[] | null = null;
+
         if (editor && this._settings.highlightTrailing) {
             if (this._paused.has(editor.document)) {
-                editor.setDecorations(this._settings.textEditorDecorationType, []);
+                ranges = [];
             } else {
-                editor.setDecorations(this._settings.textEditorDecorationType, this.getRangesToHighlight(editor.document, editor.selections));
+                ranges = this.getRangesToHighlight(editor.document, editor.selections);
             }
+            editor.setDecorations(this._settings.textEditorDecorationType, ranges);
+        }
+
+        if (this._logger.getLogLevel() >= LogLevel.info) {
+            const debugTrailing = ranges.map(r => new vscode.Range(r.start.line, 0, r.end.line, 2));
+            let debugWatched: vscode.Range[] = [];
+            let set: Set<number> = this._lines.get(editor.document);
+            if (set) {
+                set.forEach(line => debugWatched.push(new vscode.Range(line, 0, line, 1)));
+            }
+            editor.setDecorations(this._settings.debugTrailingDecorationType, debugTrailing);
+            editor.setDecorations(this._settings.debugWatchedDecorationType, debugWatched);
         }
     }
 

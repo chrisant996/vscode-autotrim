@@ -25,6 +25,8 @@ export class Settings implements AutoTrimSettings {
     includeEmptyLines: boolean = true;
     statusBar: boolean;
     textEditorDecorationType: vscode.TextEditorDecorationType | null = null;
+    debugTrailingDecorationType: vscode.TextEditorDecorationType | null = null;
+    debugWatchedDecorationType: vscode.TextEditorDecorationType | null = null;
 
     ignoreDocument(document: vscode.TextDocument): boolean {
         return this.languagesToIgnore.has(document.languageId.toLowerCase()) || this.schemesToIgnore.has(document.uri.scheme.toLowerCase());
@@ -63,6 +65,28 @@ export class Settings implements AutoTrimSettings {
         } else {
             this.textEditorDecorationType = this.getTextEditorDecorationType();
         }
+
+        if (this.debugTrailingDecorationType) {
+            this.debugTrailingDecorationType.dispose();
+        }
+        this.debugTrailingDecorationType = vscode.window.createTextEditorDecorationType({
+            borderRadius: config.get<string>('borderRadius'),
+            borderWidth: config.get<string>('borderWidth'),
+            borderStyle: "solid",
+            backgroundColor: "#ff66667f",
+            borderColor: "#ff99997f",
+        });
+
+        if (this.debugWatchedDecorationType) {
+            this.debugWatchedDecorationType.dispose();
+        }
+        this.debugWatchedDecorationType = vscode.window.createTextEditorDecorationType({
+            borderRadius: config.get<string>('borderRadius'),
+            borderWidth: config.get<string>('borderWidth'),
+            borderStyle: "dotted",
+            backgroundColor: "#ff99007f",
+            borderColor: "#ffcc007f",
+        });
     }
 
     public resetToDefaults(): void {

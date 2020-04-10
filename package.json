@@ -36,7 +36,7 @@
             {
                 "title": "AutoTrim",
                 "properties": {
-                    "autotrim.loglevel": {
+                    "autotrim.logLevel": {
                         "type": "string",
                         "enum": [
                             "none",

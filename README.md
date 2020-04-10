@@ -48,4 +48,4 @@ MarkDown files get a little bit of special treatment:  lines ending in exactly t
 
 This extension is forked from [nathanridley.autotrim](https://github.com/axefrog/vscode-autotrim) v1.0.6, which trimmed trailing whitespace from any line the cursor visited.  The extension hadn't been updated in about 4 years, and I wanted to only trim trailing whitespace from lines _changed_ by the user.  Starting from the `vscode-autotrim` extension, I ended up mostly rewriting it, but the underlying data structures are still essentially the same.
 
-This extension also includes some concepts and code lifted from [shardulm94.trailing-spaces](https://github.com/shardulm94/vscode-trailingspaces).
+This extension also includes some concepts and code lifted from [shardulm94.trailing-spaces](https://github.com/shardulm94/vscode-trailingspaces).  That extension does live highlighting but trims only on save, and I prefer live trimming after finished editing a line, so the internal approach is significantly different.
