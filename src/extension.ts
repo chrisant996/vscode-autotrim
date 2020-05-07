@@ -291,6 +291,9 @@ class LineTrimmer {
         const watchedLines = this._lines.get(doc);
         const activeLines = new Set<number>(selections.map(sel => sel.active.line));
 
+        this._logger.info(`editor has ${activeLines.size} active line(s)`);
+        activeLines.forEach(n => this._logger.log(`  active ${n}`));
+
         this._logger.info(`processLines for ${doc.uri.fsPath}`);
 
         // Process the watched lines that don't have an active cursor on them.
