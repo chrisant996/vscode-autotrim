@@ -24,12 +24,18 @@ export class Logger implements ILogger
     private static instance: Logger = new Logger();
     private level: LogLevel;
     private prefix: string;
+    private typeNames: string[] = [];
 
     private constructor(prefix?: string, level?: LogLevel) {
         if (!Logger.instance) {
             Logger.instance = this;
-            this.prefix = prefix ? prefix + ' - ' : '';
+            this.setPrefix(prefix);
             this.level = level || LogLevel.error;
+            this.typeNames[LogLevel.none]  = ' none';
+            this.typeNames[LogLevel.log]   = '  log';
+            this.typeNames[LogLevel.info]  = ' info';
+            this.typeNames[LogLevel.warn]  = ' warn';
+            this.typeNames[LogLevel.error] = 'error';
         }
     }
 
@@ -38,7 +44,7 @@ export class Logger implements ILogger
     }
 
     public setPrefix(prefix: string): void {
-        this.prefix = prefix;
+        this.prefix = prefix ? prefix + ': ' : '';
     }
 
     public setLogLevel(level: LogLevel): void {
@@ -51,25 +57,25 @@ export class Logger implements ILogger
 
     public log(message: string): void {
         if (this.level >= LogLevel.log) {
-            console.log(`${this.prefix}${LogLevel[LogLevel.log]} - ${message}`);
+            console.log(`${this.prefix}${this.typeNames[LogLevel.log]} - ${message}`);
         }
     }
 
     public info(message: string): void {
         if (this.level >= LogLevel.info) {
-            console.info(`${this.prefix}${LogLevel[LogLevel.info]} - ${message}`);
+            console.info(`${this.prefix}${this.typeNames[LogLevel.info]} - ${message}`);
         }
     }
 
     public warn(message: string): void {
         if (this.level >= LogLevel.warn) {
-            console.warn(`${this.prefix}${LogLevel[LogLevel.warn]} - ${message}`);
+            console.warn(`${this.prefix}${this.typeNames[LogLevel.warn]} - ${message}`);
         }
     }
 
     public error(message: string): void {
         if (this.level >= LogLevel.error) {
-            console.error(`${this.prefix} - ${LogLevel[LogLevel.error]} - ${message}`);
+            console.error(`${this.prefix} - ${this.typeNames[LogLevel.error]} - ${message}`);
             window.showErrorMessage(message);
         }
     }
